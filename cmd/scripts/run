@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+
+# Function to find the project root by searching for main.go
+find_project_root() {
+    local dir="$(pwd)"
+    while [[ "$dir" != "/" && ! -f "$dir/main.go" ]]; do
+        dir=$(dirname "$dir")
+    done
+    [[ "$dir" == "/" ]] && echo "" || echo "$dir"
+}
+
+#find_project_root() {
+#    local dir="$(pwd)"
+#    while [[ "$dir" != "/" && ! -f "$dir/go.mod" ]]; do
+#        dir=$(dirname "$dir")
+#    done
+#    [[ "$dir" == "/" ]] && echo "" || echo "$dir"
+#}
+
+# Find project root based on main.go
+PROJECT_ROOT=$(find_project_root)
+if [[ -z "$PROJECT_ROOT" ]]; then
+    echo "❌ Error: Could not find 'main.go'. Make sure you're inside a Go project."
+    exit 1
+fi
+
+echo "📂 Switching to project root: $PROJECT_ROOT"
+cd "$PROJECT_ROOT" || exit 1
+
+# Check if gin is installed
+if ! command -v gin &> /dev/null; then
+    echo "❌ 'gin' is not installed. Installing now..."
+    go install github.com/codegangsta/gin@latest
+fi
+
+# Load environment variables from .env
+if [ -f .env ]; then
+    source .env
+else
+    echo "❌ .env file not found!"
+    exit 1
+fi
+
+# Access the variables
+echo "Port: $PORT"
+echo "Gin Mode: $GIN_MODE"
+
+# Run the server with gin for hot reloading
+echo "🚀 Starting the Go Gin server with hot reloading..."
+gin run --appPort $PORT --port 8000

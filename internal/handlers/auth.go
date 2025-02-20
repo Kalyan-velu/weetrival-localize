@@ -1,4 +1,3 @@
-// internal/handlers/auth.go
 package handlers
 
 import (
@@ -11,7 +10,16 @@ import (
 func RegisterUser(c *gin.Context) {
 	var creds auth.Credentials
 	if err := c.BindJSON(&creds); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	if creds.Email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+		return
+	}
+	if creds.Password == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
 		return
 	}
 

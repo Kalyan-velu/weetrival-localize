@@ -1,4 +1,3 @@
-// internal/auth/auth.go
 package auth
 
 import (
@@ -45,7 +44,7 @@ func RegisterUser(email, password string) (string, error) {
 	return "", nil
 }
 
-// Store token in cookie and send response
+// StoreTokenInCookie Store token in cookie and send response
 func StoreTokenInCookie(c *gin.Context, token string) {
 	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Authenticated"})
