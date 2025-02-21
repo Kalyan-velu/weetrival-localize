@@ -1,7 +1,8 @@
-// internal/auth/google_oauth.go
+// Package auth internal/auth/google_oauth.go
 package auth
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -9,10 +10,12 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+var redirectUrl = os.Getenv("REDIRECT_URL")
+
 var googleOauthConfig = oauth2.Config{
 	ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 	ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-	RedirectURL:  "http://localhost:8080/auth/google/callback",
+	RedirectURL:  fmt.Sprintf("%s%s", redirectUrl, "/auth/google/callback"),
 	Scopes:       []string{"email"},
 	Endpoint:     google.Endpoint,
 }

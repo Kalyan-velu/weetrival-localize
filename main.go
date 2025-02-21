@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kalyan-velu/weetrival-localize/internal/db"
 	"log"
 	"os"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func main() {
+	db.ConnectDB()
+	defer db.CloseDB()
 	// Get PORT from environment or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {

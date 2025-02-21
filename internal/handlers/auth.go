@@ -1,36 +1,60 @@
 package handlers
 
 import (
+	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/kalyan-velu/weetrival-localize/internal/auth"
+	"github.com/kalyan-velu/weetrival-localize/internal/models"
+	"github.com/kalyan-velu/weetrival-localize/internal/repositories"
 	"net/http"
 )
 
 // RegisterUser handles user registration
+//func RegisterUser(c *gin.Context) {
+//	var creds auth.Credentials
+//	if err := c.BindJSON(&creds); err != nil {
+//		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+//		return
+//	}
+//
+//	if creds.Email == "" {
+//		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+//		return
+//	}
+//	if creds.Password == "" {
+//		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
+//		return
+//	}
+//
+//	// Process registration
+//	token, err := auth.RegisterUser(c,creds.Email, creds.Password)
+//	if err != nil {
+//		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register"})
+//		return
+//	}
+//
+//	c.JSON(http.StatusOK, gin.H{"token": token})
+//}
+
 func RegisterUser(c *gin.Context) {
-	var creds auth.Credentials
-	if err := c.BindJSON(&creds); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+	var user models.User
+	if err := c.BindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if creds.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
-		return
-	}
-	if creds.Password == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
-		return
-	}
-
-	// Process registration
-	token, err := auth.RegisterUser(creds.Email, creds.Password)
+	_, err := auth.RegisterUser(c)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ctx := context.Background()
+	if err := repositories.CreateUser(ctx, &user); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "message": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"message": "User registered"})
 }
 
 // LoginUser handles user login
