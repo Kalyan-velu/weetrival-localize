@@ -2,12 +2,12 @@ package migrate
 
 import (
 	"context"
-	"database/sql"
+	"log"
+
 	_ "github.com/lib/pq"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/driver/pgdriver"
 	"github.com/uptrace/bun/migrate"
-	"log"
 )
 
 func RunMigrations(dsn string) {

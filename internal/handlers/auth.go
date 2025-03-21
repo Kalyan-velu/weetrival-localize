@@ -1,60 +1,63 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/kalyan-velu/weetrival-localize/dto"
 	"github.com/kalyan-velu/weetrival-localize/internal/auth"
-	"github.com/kalyan-velu/weetrival-localize/internal/models"
-	"github.com/kalyan-velu/weetrival-localize/internal/repositories"
+	"io"
+	"log"
 	"net/http"
 )
 
-// RegisterUser handles user registration
-//func RegisterUser(c *gin.Context) {
-//	var creds auth.Credentials
-//	if err := c.BindJSON(&creds); err != nil {
-//		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
-//		return
-//	}
-//
-//	if creds.Email == "" {
-//		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
-//		return
-//	}
-//	if creds.Password == "" {
-//		c.JSON(http.StatusBadRequest, gin.H{"error": "Password is required"})
-//		return
-//	}
-//
-//	// Process registration
-//	token, err := auth.RegisterUser(c,creds.Email, creds.Password)
-//	if err != nil {
-//		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to register"})
-//		return
-//	}
-//
-//	c.JSON(http.StatusOK, gin.H{"token": token})
-//}
-
+// RegisterUser
+// @BasePath /api/v1
+// @Summary Register a new user
+// @Description Creates a new user account after checking if the user already exists
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User Data"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 409 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /register [post]
 func RegisterUser(c *gin.Context) {
-	var user models.User
-	if err := c.BindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	_, err := auth.RegisterUser(c)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	var req dto.CreateUserRequest
 	ctx := context.Background()
-	if err := repositories.CreateUser(ctx, &user); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user", "message": err.Error()})
+
+	// Log raw request body
+	buf, _ := io.ReadAll(c.Request.Body)
+	c.Request.Body = io.NopCloser(bytes.NewBuffer(buf)) // Restore body for parsing
+	log.Printf("Raw request body: %s", string(buf))
+
+	if len(buf) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing request body"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "User registered"})
+	// Bind JSON request to user model
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "message": err.Error()})
+		return
+	}
+
+	log.Printf("Parsed request: %+v", req) // Now logs correctly
+
+	// Register user
+	registeredUser, err := auth.RegisterUser(ctx, req)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Registration failed", "message": err.Error()})
+		return
+	}
+
+	// Successful response
+	c.JSON(http.StatusCreated, gin.H{
+		"message": "User registered successfully",
+		"data":    registeredUser,
+	})
 }
 
 // LoginUser handles user login

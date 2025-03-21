@@ -7,13 +7,23 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	docs "github.com/kalyan-velu/weetrival-localize/docs"
 	"github.com/kalyan-velu/weetrival-localize/internal/handlers"
 	"github.com/kalyan-velu/weetrival-localize/internal/middleware"
+	swaggerfiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+func init() {
+	// Load .env file (if it exists)
+	_ = godotenv.Load()
+}
 
 func main() {
 	db.ConnectDB()
 	defer db.CloseDB()
+	docs.SwaggerInfo.BasePath = "/api/v1"
 	// Get PORT from environment or default to 8080
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -22,9 +32,10 @@ func main() {
 	}
 
 	r := gin.Default()
-
-	v1 := r.Group("/v1")
+	r.Use(middleware.LogRequestMiddleware())
+	v1 := r.Group("/api/v1")
 	{
+
 		v1.POST("/register", handlers.RegisterUser)
 		v1.POST("/login", handlers.LoginUser)
 
@@ -33,6 +44,7 @@ func main() {
 
 		v1.GET("/protected", handlers.ProtectedEndpoint)
 	}
+	r.GET("/docs/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	// Start server on the correct port
 	addr := fmt.Sprintf(":%s", port)

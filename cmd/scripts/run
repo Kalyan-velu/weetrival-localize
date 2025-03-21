@@ -2,6 +2,7 @@
 
 # Function to find the project root by searching for main.go
 find_project_root() {
+    # shellcheck disable=SC2155
     local dir="$(pwd)"
     while [[ "$dir" != "/" && ! -f "$dir/main.go" ]]; do
         dir=$(dirname "$dir")
@@ -47,4 +48,5 @@ echo "Gin Mode: $GIN_MODE"
 
 # Run the server with gin for hot reloading
 echo "🚀 Starting the Go Gin server with hot reloading..."
-gin run --appPort $PORT --port 8000
+#gin run --appPort "$PORT" --port "8000"
+fresh -c fresh.conf

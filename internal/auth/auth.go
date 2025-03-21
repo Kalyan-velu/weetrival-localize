@@ -1,32 +1,37 @@
 package auth
 
 import (
+	"context"
+	"errors"
+	"fmt"
+	"github.com/kalyan-velu/weetrival-localize/dto"
+	"github.com/kalyan-velu/weetrival-localize/internal/models"
+	"github.com/kalyan-velu/weetrival-localize/internal/repositories"
+	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/joho/godotenv"
 )
 
-type CreateUserRequest struct {
-	Name     string `json:"name" binding:"required,min=3,max=50"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role" binding:"required,oneof=admin user moderator"`
-}
+var jwtSecret []byte
 
-// Load the secret key from environment variables
-var secret = os.Getenv("AUTH_SECRET")
-
-// Validate the secret and throw an error if missing
+// Load environment variables & validate secret
 func init() {
-	if secret == "" {
-		panic("❌ AUTH_SECRET is not set in the environment variables!")
+	if err := godotenv.Load(); err != nil {
+		log.Println("⚠️ .env file not found, relying on system environment")
 	}
-}
 
-var jwtSecret = []byte(secret)
+	secret := os.Getenv("AUTH_SECRET")
+	if secret == "" {
+		log.Fatal("❌ AUTH_SECRET is missing in environment variables")
+	}
+	jwtSecret = []byte(secret)
+}
 
 // Credentials struct for user login
 type Credentials struct {
@@ -37,9 +42,9 @@ type Credentials struct {
 // GenerateToken creates a JWT for a user
 func GenerateToken(email string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
-	claims := &jwt.StandardClaims{
-		Subject:   email,
-		ExpiresAt: expirationTime.Unix(),
+	claims := jwt.MapClaims{
+		"sub": email,
+		"exp": expirationTime.Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -48,8 +53,8 @@ func GenerateToken(email string) (string, error) {
 
 // LoginUser authenticates user and generates token
 func LoginUser(email, password string) (string, error) {
-	// Authenticate the user here (hash password, check DB)
-	// For simplicity, we'll assume valid credentials here
+	// TODO: Validate user from DB (check hashed password)
+	// Assume user is valid for now
 
 	token, err := GenerateToken(email)
 	if err != nil {
@@ -59,19 +64,56 @@ func LoginUser(email, password string) (string, error) {
 	return token, nil
 }
 
-// RegisterUser function (Stub for now)
-func RegisterUser(c *gin.Context) (string, error) {
-	var req CreateUserRequest
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required info.", "message": err.Error()})
-		return "", err
+// RegisterUser validates and registers a new user
+func RegisterUser(ctx context.Context, req dto.CreateUserRequest) (*models.User, error) {
+	// Validate user input
+	if len(req.Name) < 3 || len(req.Name) > 50 {
+		return nil, errors.New("name must be between 3 and 50 characters")
 	}
-	return "", nil
+	if len(req.Password) < 8 {
+		return nil, errors.New("password must be at least 8 characters")
+	}
 
+	//Check if user already exists
+	existingUser, err := repositories.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, fmt.Errorf("database error: %v", err)
+	}
+
+	if existingUser != nil {
+		return nil, errors.New("user already exists")
+	}
+
+	// Hash the password before saving
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, errors.New("failed to hash password")
+	}
+
+	hashedPasswordString := string(hashedPassword)
+
+	user := &models.User{
+		Name:         req.Name,
+		Email:        req.Email,
+		PasswordHash: &hashedPasswordString,
+		Role:         req.Role,
+		CreatedAt:    time.Now(),
+	}
+	//** Validate role before saving
+	if err := user.ValidateRole(); err != nil {
+		return nil, err
+	}
+
+	// Save the user to the database
+	if err := repositories.CreateUser(ctx, user); err != nil {
+		return nil, errors.New("failed to save user to the database")
+	}
+
+	return user, nil
 }
 
-// StoreTokenInCookie stores token in cookie and sends response
+// StoreTokenInCookie stores JWT token in a cookie
 func StoreTokenInCookie(c *gin.Context, token string) {
-	c.SetCookie("token", token, 3600, "/", "localhost", false, true)
+	c.SetCookie("token", token, 3600, "/", os.Getenv("COOKIE_DOMAIN"), false, true)
 	c.JSON(http.StatusOK, gin.H{"message": "Authenticated"})
 }
