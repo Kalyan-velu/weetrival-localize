@@ -3,6 +3,7 @@ package db
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 	"github.com/uptrace/bun"
@@ -14,7 +15,7 @@ import (
 var DB *bun.DB
 
 func ConnectDB() {
-	dsn := "postgres://postgres:kalyan%40postgre@localhost:5432/weetrival?sslmode=disable"
+	dsn := os.Getenv("DATABASE_URL")
 	sqldb := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
 
 	DB = bun.NewDB(sqldb, pgdialect.New())
