@@ -5,7 +5,7 @@ go 1.23.5
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-bun/bun-starter-kit v0.0.0-20221117143002-e3e263102887
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
@@ -59,7 +59,6 @@ require (
 	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
-	github.com/uptrace/bun/dbfixture v1.0.20 // indirect
 	github.com/uptrace/bun/dialect/sqlitedialect v1.0.20 // indirect
 	github.com/uptrace/bun/driver/sqliteshim v1.0.20 // indirect
 	github.com/uptrace/bun/extra/bundebug v1.0.20 // indirect
