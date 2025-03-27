@@ -16,7 +16,10 @@ func (h ExitOnPanicHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) 
 		if err := recover(); err != nil {
 			buf := make([]byte, 1<<20)
 			n := runtime.Stack(buf, true)
-			fmt.Fprintf(os.Stderr, "panic: %v\n\n%s", err, buf[:n])
+			_, err := fmt.Fprintf(os.Stderr, "panic: %v\n\n%s", err, buf[:n])
+			if err != nil {
+				return
+			}
 			os.Exit(1)
 		}
 	}()

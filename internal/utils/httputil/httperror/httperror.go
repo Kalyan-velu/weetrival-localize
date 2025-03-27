@@ -1,6 +1,7 @@
 package httperror
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"

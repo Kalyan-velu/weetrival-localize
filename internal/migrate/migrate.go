@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"log"
+
 	"github.com/kalyan-velu/weetrival-localize/cmd/migrate/migrations"
 	"github.com/kalyan-velu/weetrival-localize/internal/models"
-	"log"
 
 	_ "github.com/lib/pq"
 	"github.com/uptrace/bun"

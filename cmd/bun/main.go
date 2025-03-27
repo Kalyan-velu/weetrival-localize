@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/go-bun/bun-starter-kit/bunapp"
-	"github.com/kalyan-velu/weetrival-localize/cmd/migrate/migrations"
-	"github.com/uptrace/bun/migrate"
-	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+
+	"github.com/go-bun/bun-starter-kit/bunapp"
+	"github.com/uptrace/bun/migrate"
+	"github.com/urfave/cli/v2"
+
+	"github.com/kalyan-velu/weetrival-localize/cmd/migrate/migrations"
 )
 
 func main() {
@@ -270,7 +272,6 @@ func newDBCommand(migrations *migrate.Migrations) *cli.Command {
 	}
 }
 
-/
 //
 //func isServerClosed(err error) bool {
 //  return err.Error() == "http: Server closed"

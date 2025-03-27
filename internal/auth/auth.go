@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/kalyan-velu/weetrival-localize/dto"
 	"github.com/kalyan-velu/weetrival-localize/internal/models"
 	"github.com/kalyan-velu/weetrival-localize/internal/repositories"
-	"golang.org/x/crypto/bcrypt"
-	"log"
-	"net/http"
-	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -19,6 +20,8 @@ import (
 )
 
 var jwtSecret []byte
+
+var ErrInvalidCredentials = errors.New("invalid email or password")
 
 // Load environment variables & validate secret
 func init() {
@@ -40,10 +43,10 @@ type Credentials struct {
 }
 
 // GenerateToken creates a JWT for a user
-func GenerateToken(email string) (string, error) {
+func GenerateToken(user *models.User) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)
 	claims := jwt.MapClaims{
-		"sub": email,
+		"sub": user.ID,
 		"exp": expirationTime.Unix(),
 	}
 
@@ -51,12 +54,24 @@ func GenerateToken(email string) (string, error) {
 	return token.SignedString(jwtSecret)
 }
 
-// LoginUser authenticates user and generates token
-func LoginUser(email, password string) (string, error) {
-	// TODO: Validate user from DB (check hashed password)
-	// Assume user is valid for now
+// LoginUser authenticates user and generates a token
+func LoginUser(ctx context.Context, req dto.LoginRequest) (string, error) {
+	user, err := repositories.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return "", err
+	}
+	if user == nil {
+		return "", ErrInvalidCredentials
+	}
 
-	token, err := GenerateToken(email)
+	// Compare the provided password with the stored hash
+	err = bcrypt.CompareHashAndPassword([]byte(*user.PasswordHash), []byte(req.Password))
+	if err != nil {
+		return "", ErrInvalidCredentials
+	}
+
+	// Generate token upon successful authentication
+	token, err := GenerateToken(user)
 	if err != nil {
 		return "", err
 	}
@@ -115,5 +130,4 @@ func RegisterUser(ctx context.Context, req dto.CreateUserRequest) (*models.User,
 // StoreTokenInCookie stores JWT token in a cookie
 func StoreTokenInCookie(c *gin.Context, token string) {
 	c.SetCookie("token", token, 3600, "/", os.Getenv("COOKIE_DOMAIN"), false, true)
-	c.JSON(http.StatusOK, gin.H{"message": "Authenticated"})
 }

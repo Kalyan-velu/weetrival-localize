@@ -3,12 +3,14 @@ package handlers
 import (
 	"bytes"
 	"context"
-	"github.com/gin-gonic/gin"
-	"github.com/kalyan-velu/weetrival-localize/dto"
-	"github.com/kalyan-velu/weetrival-localize/internal/auth"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/kalyan-velu/weetrival-localize/dto"
+	"github.com/kalyan-velu/weetrival-localize/internal/auth"
 )
 
 // RegisterUser
@@ -31,7 +33,6 @@ func RegisterUser(c *gin.Context) {
 	// Log raw request body
 	buf, _ := io.ReadAll(c.Request.Body)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(buf)) // Restore body for parsing
-	log.Printf("Raw request body: %s", string(buf))
 
 	if len(buf) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing request body"})
@@ -40,7 +41,7 @@ func RegisterUser(c *gin.Context) {
 
 	// Bind JSON request to user model
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "message": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "message": "Missing or invalid request body"})
 		return
 	}
 
@@ -62,18 +63,20 @@ func RegisterUser(c *gin.Context) {
 
 // LoginUser handles user login
 func LoginUser(c *gin.Context) {
-	var creds auth.Credentials
-	if err := c.BindJSON(&creds); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+	var req dto.LoginRequest
+	ctx := c.Request.Context()
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request", "message": err.Error()})
 		return
 	}
 
-	token, err := auth.LoginUser(creds.Email, creds.Password)
+	token, err := auth.LoginUser(ctx, req)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
+	auth.StoreTokenInCookie(c, token)
 	c.JSON(http.StatusOK, gin.H{"token": token})
 }
 

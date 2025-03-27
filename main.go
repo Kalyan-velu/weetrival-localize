@@ -2,17 +2,19 @@ package main
 
 import (
 	"fmt"
-	"github.com/kalyan-velu/weetrival-localize/internal/db"
 	"log"
 	"os"
 
+	"github.com/kalyan-velu/weetrival-localize/internal/db"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
-	docs "github.com/kalyan-velu/weetrival-localize/docs"
-	"github.com/kalyan-velu/weetrival-localize/internal/handlers"
-	"github.com/kalyan-velu/weetrival-localize/internal/middleware"
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+
+	"github.com/kalyan-velu/weetrival-localize/docs"
+	"github.com/kalyan-velu/weetrival-localize/internal/handlers"
+	"github.com/kalyan-velu/weetrival-localize/internal/middleware"
 )
 
 func init() {

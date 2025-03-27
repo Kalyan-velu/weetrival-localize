@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"bytes"
-	"github.com/gin-gonic/gin"
 	"io"
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 func LogRequestMiddleware() gin.HandlerFunc {

@@ -1,4 +1,3 @@
-// internal/middleware/abac.go
 package middleware
 
 import (

@@ -53,3 +53,7 @@ help:
 	@echo "  make reset             - Drop all tables and reset"
 
 .PHONY: install migrate rollback new-migration status reset help
+
+start:
+	@echo "Starting weetrival-localize server"
+
